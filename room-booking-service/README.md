@@ -39,20 +39,20 @@ docker run -p 8000:8000 room-booking-service
 
 ## API
 
-| Метод | Путь | Аутентификация | Описание |
-|---|---|---|---|
-| POST | /api/v1/auth/register | нет | Регистрация |
-| POST | /api/v1/auth/login | нет | Получить JWT |
-| GET | /api/v1/rooms/ | нет | Список комнат |
-| GET | /api/v1/rooms/availability?date= | JWT | Доступность слотов на дату |
-| GET | /api/v1/slots/ | нет | Список слотов |
-| POST | /api/v1/slots/ | нет | Создать слот |
-| POST | /api/v1/bookings/ | JWT | Создать бронь |
-| GET | /api/v1/bookings/ | JWT | Мои брони |
-| DELETE | /api/v1/bookings/{id} | JWT | Отменить бронь |
+**Без аутентификации**
+- `POST /api/v1/auth/register` — регистрация
+- `POST /api/v1/auth/login` — получить JWT
+- `GET /api/v1/rooms/` — список комнат
+- `GET /api/v1/slots/` — список слотов
+- `POST /api/v1/slots/` — создать слот
 
-- Сотрудник: управляет только своими бронями
-- Администратор: может отменять любые брони
+**Требуют JWT (заголовок `Authorization: Bearer <token>`)**
+- `GET /api/v1/rooms/availability?date=YYYY-MM-DD` — доступность слотов на дату
+- `POST /api/v1/bookings/` — создать бронь
+- `GET /api/v1/bookings/` — мои брони
+- `DELETE /api/v1/bookings/{id}` — отменить бронь
+
+Права: сотрудник управляет только своими бронями, администратор — любыми.
 
 ## Тесты
 
@@ -64,8 +64,6 @@ poetry run pytest -v
 
 ## Переменные окружения
 
-| Переменная | По умолчанию |
-|---|---|
-| DATABASE_URL | sqlite+aiosqlite:///./room_booking.db |
-| SECRET_KEY | secret_key |
-| ACCESS_TOKEN_EXPIRE_MINUTES | 1440 |
+- `DATABASE_URL` — по умолчанию `sqlite+aiosqlite:///./room_booking.db`
+- `SECRET_KEY` — по умолчанию `secret_key`
+- `ACCESS_TOKEN_EXPIRE_MINUTES` — по умолчанию `1440`
