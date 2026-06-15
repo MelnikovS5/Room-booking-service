@@ -9,3 +9,14 @@ class RoomResponse(BaseModel):
     name: str
     description: str | None
 
+class SlotAvailability(BaseModel):
+    slot_id: int
+    start_time: str
+    end_time: str
+    is_available: bool
+
+class RoomAvailabilityResponse(BaseModel):
+    room_id: int
+    room_name: str
+    slots: list[SlotAvailability]
+

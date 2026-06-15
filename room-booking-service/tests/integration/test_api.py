@@ -276,3 +276,46 @@ async def test_delete_booking_not_found(auth_client: AsyncClient):
 async def test_unauthorized_access(client: AsyncClient):
     response = await client.get("/api/v1/bookings/")
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_rooms_availability_all_free(user_client: AsyncClient, db_session: AsyncSession):
+    db_session.add(Room(name="Avail Room", description="Test"))
+    await db_session.flush()
+    db_session.add(Slot(start_time=datetime.time(9, 0), end_time=datetime.time(11, 0)))
+    await db_session.flush()
+
+    response = await user_client.get("/api/v1/rooms/availability", params={"date": "2026-07-01"})
+    assert response.status_code == 200
+    data = response.json()
+    assert any(r["room_name"] == "Avail Room" for r in data)
+
+
+@pytest.mark.asyncio
+async def test_rooms_availability_slot_booked(user_client: AsyncClient, db_session: AsyncSession):
+    room = Room(name="Booked Room", description="Test")
+    db_session.add(room)
+    await db_session.flush()
+    slot = Slot(start_time=datetime.time(9, 0), end_time=datetime.time(11, 0))
+    db_session.add(slot)
+    await db_session.flush()
+
+    booking_resp = await user_client.post("/api/v1/bookings/", json={
+        "room_id": room.id, "slot_id": slot.id, "booking_date": "2026-07-01",
+    })
+    assert booking_resp.status_code == 200
+
+    response = await user_client.get("/api/v1/rooms/availability", params={"date": "2026-07-01"})
+    assert response.status_code == 200
+    data = response.json()
+    for room_data in data:
+        if room_data["room_id"] == room.id:
+            for s in room_data["slots"]:
+                if s["slot_id"] == slot.id:
+                    assert s["is_available"] is False
+
+
+@pytest.mark.asyncio
+async def test_rooms_availability_unauthorized(client: AsyncClient):
+    response = await client.get("/api/v1/rooms/availability", params={"date": "2026-07-01"})
+    assert response.status_code == 401

@@ -1,6 +1,6 @@
 import asyncio
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import async_session
+from app.db.session import async_session, engine
+from app.db.base import Base
 from app.core.security import hash_password
 from app.models.user import User, UserRole
 from app.models.room import Room
@@ -9,6 +9,8 @@ import datetime
 from sqlalchemy import select
 
 async def seed():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     async with async_session() as db:
         result = await db.execute(select(User).where(User.username == "admin"))
         if not result.scalars().first():
