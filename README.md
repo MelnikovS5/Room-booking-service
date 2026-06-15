@@ -1,6 +1,8 @@
 # Room Booking Service
 
-Сервис для бронирования переговорных комнат. FastAPI + PostgreSQL + JWT.
+Сервис для бронирования переговорных комнат в коворкинге.
+
+Стек: FastAPI + PostgreSQL/SQLite + SQLAlchemy + JWT + Docker.
 
 ## Быстрый старт
 
@@ -8,8 +10,7 @@
 docker compose up --build
 ```
 
-Приложение будет доступно на http://localhost:8000.
-Swagger-документация: http://localhost:8000/docs.
+Приложение на http://localhost:8000, Swagger на http://localhost:8000/docs.
 
 ## Запуск без Docker
 
@@ -18,28 +19,38 @@ poetry install
 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Требуется запущенный PostgreSQL. URL базы задаётся через переменную окружения `DATABASE_URL`.
+По умолчанию используется SQLite. Для PostgreSQL задайте `DATABASE_URL`.
+
+## docker run
+
+```bash
+docker build -t room-booking-service .
+docker run -p 8000:8000 room-booking-service
+```
+
+Работает с SQLite без дополнительных настроек.
 
 ## Seed
 
-При первом запуске автоматически создаются:
+При первом запуске автоматически создаются таблицы и начальные данные:
 - администратор `admin` / `admin123`
-- 3 переговорные комнаты
-- 5 временных слотов (09:00–19:00)
+- 3 комнаты: Переговорная1–3
+- 5 слотов: 09:00–11:00, 11:00–13:00, 13:00–15:00, 15:00–17:00, 17:00–19:00
 
 ## API
 
-| Метод | Путь | Описание |
-| POST | /api/v1/auth/register | Регистрация |
-| POST | /api/v1/auth/login | Получить JWT-токен |
-| GET | /api/v1/rooms/ | Список комнат |
-| GET | /api/v1/slots/ | Список слотов |
-| POST | /api/v1/slots/ | Создать слот |
-| POST | /api/v1/bookings/ | Создать бронь* |
-| GET | /api/v1/bookings/ | Мои брони* |
-| DELETE | /api/v1/bookings/{id} | Отменить бронь* |
+**Без аутентификации**
+- `POST /api/v1/auth/register` — регистрация
+- `POST /api/v1/auth/login` — получить JWT
+- `GET /api/v1/rooms/` — список комнат
+- `GET /api/v1/slots/` — список слотов
+- `POST /api/v1/slots/` — создать слот
 
-*Требуется заголовок `Authorization: Bearer <token>`.
+**Требуют JWT (заголовок `Authorization: Bearer <token>`)**
+- `GET /api/v1/rooms/availability?date=YYYY-MM-DD` — доступность слотов на дату
+- `POST /api/v1/bookings/` — создать бронь
+- `GET /api/v1/bookings/` — мои брони
+- `DELETE /api/v1/bookings/{id}` — отменить бронь
 
 Права: сотрудник управляет только своими бронями, администратор — любыми.
 
@@ -49,11 +60,10 @@ poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 poetry run pytest -v
 ```
 
-32 теста (15 unit + 17 integration), SQLite in-memory.
+35 тестов: 15 unit + 20 integration. Используется SQLite in-memory.
 
 ## Переменные окружения
 
-| Переменная | По умолчанию |
-| DATABASE_URL | postgresql+asyncpg://postgres:postgres@localhost:5432/room_booking |
-| SECRET_KEY | secret_key |
-| ACCESS_TOKEN_EXPIRE_MINUTES | 1440 |
+- `DATABASE_URL` — по умолчанию `sqlite+aiosqlite:///./room_booking.db`
+- `SECRET_KEY` — по умолчанию `secret_key`
+- `ACCESS_TOKEN_EXPIRE_MINUTES` — по умолчанию `1440`
