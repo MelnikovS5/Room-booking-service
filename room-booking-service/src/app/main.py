@@ -1,10 +1,19 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.api.v1.auth import router as auth_router
 from app.api.v1.rooms import router as rooms_router
 from app.api.v1.slots import router as slots_router
 from app.api.v1.bookings import router as bookings_router
+from app.seed import seed
 
-app = FastAPI(title="Room Booking Service")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await seed()
+    yield
+
+
+app = FastAPI(title="Room Booking Service", lifespan=lifespan)
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(rooms_router, prefix="/api/v1")
